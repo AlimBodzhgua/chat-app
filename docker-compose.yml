@@ -1,0 +1,56 @@
+services:
+  postgres:
+    container_name: postgres_db
+    image: postgres:17-alpine
+    restart: always
+    env_file:
+      - ./server/.env
+    environment:
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+    ports:
+      - 5432:5432
+    volumes: 
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - chat-app
+      
+  server:
+    container_name: chat-app-server
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    ports:
+      - 4000:4000
+    env_file: ./server/.env
+    depends_on:
+      - postgres
+    networks:
+      - chat-app
+    restart: unless-stopped
+
+  client:
+    container_name: chat-app-client
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+    ports:
+      - 3000:3000
+    env_file: ./client/.env
+    depends_on:
+      - server
+    volumes:
+      - ./client:/app
+      - /app/node_modules
+    networks:
+      - chat-app
+    restart: unless-stopped
+
+
+volumes:
+  pgdata:
+  client:
+
+networks:
+  chat-app:
